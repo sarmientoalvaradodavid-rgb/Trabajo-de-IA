@@ -1,0 +1,198 @@
+# SISTEMA DIFUSO MANUAL - SATISFACCIÓN TRANSPORTE CUBA
+
+print("=" * 50)
+print("SISTEMA DIFUSO - SATISFACCIÓN TRANSPORTE PÚBLICO CUBA")
+print("=" * 50)
+print("Autores: David Sarmiento & Abdiel Anaya")
+print("=" * 50)
+
+# ========== FUNCIONES DE PERTENENCIA TRIANGULARES ==========
+def pertenencia_triangular(x, a, b, c):
+    """Función de pertenencia triangular"""
+    if x <= a:
+        return 0
+    elif a < x <= b:
+        return (x - a) / (b - a)
+    elif b < x < c:
+        return (c - x) / (c - b)
+    else:
+        return 0
+
+# ========== VARIABLES DE ENTRADA ==========
+print("\n📋 INGRESE LOS DATOS DEL USUARIO:")
+print("-" * 40)
+
+# Tiempo de espera (0-120 minutos)
+while True:
+    try:
+        tiempo = float(input("⏱️  Tiempo de espera (minutos, 0-120): "))
+        if 0 <= tiempo <= 120:
+            break
+        else:
+            print("   El valor debe estar entre 0 y 120")
+    except:
+        print("   Ingrese un número válido")
+
+# Comodidad (0-10)
+while True:
+    try:
+        comodidad = float(input("🪑 Comodidad (0=muy incómodo, 10=muy cómodo): "))
+        if 0 <= comodidad <= 10:
+            break
+        else:
+            print("   El valor debe estar entre 0 y 10")
+    except:
+        print("   Ingrese un número válido")
+
+# Disponibilidad (0-10)
+while True:
+    try:
+        disponibilidad = float(input("🚌 Disponibilidad (0=muy mala, 10=excelente): "))
+        if 0 <= disponibilidad <= 10:
+            break
+        else:
+            print("   El valor debe estar entre 0 y 10")
+    except:
+        print("   Ingrese un número válido")
+
+# ========== CALCULAR PERTENENCIAS ==========
+# Tiempo de espera: corto(0,0,40), moderado(20,50,80), largo(60,120,120)
+tiempo_corto = pertenencia_triangular(tiempo, 0, 0, 40)
+tiempo_moderado = pertenencia_triangular(tiempo, 20, 50, 80)
+tiempo_largo = pertenencia_triangular(tiempo, 60, 120, 120)
+
+# Comodidad: baja(0,0,5), media(2,5,8), alta(6,10,10)
+comodidad_baja = pertenencia_triangular(comodidad, 0, 0, 5)
+comodidad_media = pertenencia_triangular(comodidad, 2, 5, 8)
+comodidad_alta = pertenencia_triangular(comodidad, 6, 10, 10)
+
+# Disponibilidad: insuficiente(0,0,4), regular(2,5,8), alta(6,10,10)
+disp_insuficiente = pertenencia_triangular(disponibilidad, 0, 0, 4)
+disp_regular = pertenencia_triangular(disponibilidad, 2, 5, 8)
+disp_alta = pertenencia_triangular(disponibilidad, 6, 10, 10)
+
+# ========== REGLAS DIFUSAS (MÉTODO MAMDANI) ==========
+# Regla 1: Si espera = largo Y comodidad = baja → satisfacción = baja
+r1 = min(tiempo_largo, comodidad_baja)
+
+# Regla 2: Si espera = corto Y disponibilidad = alta → satisfacción = alta
+r2 = min(tiempo_corto, disp_alta)
+
+# Regla 3: Si espera = moderado Y comodidad = media → satisfacción = media
+r3 = min(tiempo_moderado, comodidad_media)
+
+# Regla 4: Si disponibilidad = insuficiente Y comodidad = baja → satisfacción = baja
+r4 = min(disp_insuficiente, comodidad_baja)
+
+# Regla 5: Si espera = corto Y comodidad = alta → satisfacción = alta
+r5 = min(tiempo_corto, comodidad_alta)
+
+# Regla 6: Si espera = moderado Y disponibilidad = regular → satisfacción = media
+r6 = min(tiempo_moderado, disp_regular)
+
+# ========== DEFUZZIFICACIÓN (CENTROIDE DISCRETO) ==========
+valores_salida = {
+    'baja': 2.0,
+    'media': 5.0,
+    'alta': 8.0
+}
+
+activacion_baja = max(r1, r4)
+activacion_media = max(r3, r6)
+activacion_alta = max(r2, r5)
+
+numerador = (activacion_baja * valores_salida['baja'] +
+             activacion_media * valores_salida['media'] +
+             activacion_alta * valores_salida['alta'])
+denominador = activacion_baja + activacion_media + activacion_alta
+
+if denominador > 0:
+    satisfaccion = numerador / denominador
+else:
+    satisfaccion = 5.0
+
+satisfaccion = round(satisfaccion, 1)
+
+# ========== CLASIFICACIÓN CUALITATIVA ==========
+if satisfaccion >= 7:
+    nivel = "🔵 ALTA"
+    recomendacion = "✅ El servicio es bueno"
+elif satisfaccion >= 4:
+    nivel = "🟡 MEDIA"
+    recomendacion = "⚠️ El servicio es mejorable"
+else:
+    nivel = "🔴 BAJA"
+    recomendacion = "❌ El servicio requiere mejoras urgentes"
+
+# ========== MOSTRAR RESULTADOS ==========
+print("\n" + "=" * 50)
+print("📊 RESULTADOS DEL ANÁLISIS DIFUSO")
+print("=" * 50)
+
+print(f"\n📌 DATOS INGRESADOS:")
+print(f"   Tiempo de espera: {tiempo} minutos")
+print(f"   Nivel de comodidad: {comodidad} / 10")
+print(f"   Disponibilidad: {disponibilidad} / 10")
+
+print(f"\n📌 ACTIVACIÓN DE REGLAS:")
+print(f"   Regla 1 (Largo + Baja): {r1:.2f}")
+print(f"   Regla 2 (Corto + Alta): {r2:.2f}")
+print(f"   Regla 3 (Moderado + Media): {r3:.2f}")
+print(f"   Regla 4 (Insuficiente + Baja): {r4:.2f}")
+print(f"   Regla 5 (Corto + Alta comodidad): {r5:.2f}")
+print(f"   Regla 6 (Moderado + Regular): {r6:.2f}")
+
+print(f"\n🎯 SATISFACCIÓN ESTIMADA: {satisfaccion} / 10")
+print(f"   Clasificación: {nivel}")
+print(f"   {recomendacion}")
+
+print("\n" + "=" * 50)
+print("🔬 ¿CÓMO FUNCIONA?")
+print("   La lógica difusa permite evaluar sin límites estrictos")
+print("   Ejemplo: 30 min puede ser 0.6 'corto' y 0.4 'moderado'")
+print("=" * 50)
+
+# ========== EJEMPLOS ADICIONALES AUTOMÁTICOS ==========
+print("\n📋 EJEMPLOS DE REFERENCIA:")
+print("-" * 50)
+print("| Espera | Comodidad | Disponibilidad | Satisfacción |")
+print("|--------|-----------|---------------|--------------|")
+
+ejemplos = [
+    (10, 8, 9),
+    (30, 5, 6),
+    (60, 3, 4),
+    (90, 2, 3),
+]
+
+for e, c, d in ejemplos:
+    tc = pertenencia_triangular(e, 0, 0, 40)
+    tm = pertenencia_triangular(e, 20, 50, 80)
+    tl = pertenencia_triangular(e, 60, 120, 120)
+    
+    cb = pertenencia_triangular(c, 0, 0, 5)
+    cm = pertenencia_triangular(c, 2, 5, 8)
+    ca = pertenencia_triangular(c, 6, 10, 10)
+    
+    di = pertenencia_triangular(d, 0, 0, 4)
+    dr = pertenencia_triangular(d, 2, 5, 8)
+    da = pertenencia_triangular(d, 6, 10, 10)
+    
+    rr1 = min(tl, cb)
+    rr2 = min(tc, da)
+    rr3 = min(tm, cm)
+    rr4 = min(di, cb)
+    rr5 = min(tc, ca)
+    rr6 = min(tm, dr)
+    
+    ab = max(rr1, rr4)
+    am = max(rr3, rr6)
+    aa = max(rr2, rr5)
+    
+    num = (ab * 2.0) + (am * 5.0) + (aa * 8.0)
+    den = ab + am + aa
+    sat = round(num / den, 1) if den > 0 else 5.0
+    
+    print(f"| {e:6} | {c:9} | {d:13} | {sat:12} |")
+
+print("\n✅ SISTEMA COMPLETADO CON ÉXITO")
